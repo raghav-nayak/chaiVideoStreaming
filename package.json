@@ -1,7 +1,7 @@
 {
   "name": "chai-video-streaming",
   "version": "1.0.0",
-  "description": "video streaming application ",
+  "description": "video streaming application",
   "type": "module",
   "main": "index.js",
   "scripts": {

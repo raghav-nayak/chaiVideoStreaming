@@ -1,7 +1,6 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import cookieParser from from;
-"cookie-parser";
 
 const app = express();
 
@@ -24,9 +23,15 @@ app.use(express.urlencoded({
 // public assets
 app.use(express.static("public"));
 
-// to perform CRUB operations on user's browser
+// to perform CRUD operations on user's browser
 app.use(cookieParser());
 
-export {
-    app
-};
+// routes imports
+import userRouter from "./routes/user.routes.js";
+
+// routes declaration
+// route would be something like this : http://localhost:8000/api/v1/users
+
+app.use("/api/v1/users", userRouter)
+
+export default app;
