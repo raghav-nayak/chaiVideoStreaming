@@ -1,5 +1,4 @@
-import mongoose from "mongoose";
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 // import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -67,7 +66,7 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 // create jwt token
 // this is coming from db
 userSchema.methods.generateAccessToken = function () {
-    jwt.sign({
+    return jwt.sign({
             _id: this._id,
             email: this.email,
             username: this.username,
@@ -81,7 +80,7 @@ userSchema.methods.generateAccessToken = function () {
 
 // create jwt token
 userSchema.methods.generateRefreshToken = function () {
-    jwt.sign({
+    return jwt.sign({
             _id: this._id,
             email: this.email,
             username: this.username,
@@ -94,3 +93,4 @@ userSchema.methods.generateRefreshToken = function () {
 }
 
 export const User = mongoose.model("User", userSchema);
+

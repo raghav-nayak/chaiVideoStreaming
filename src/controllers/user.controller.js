@@ -84,8 +84,10 @@ const registerUser = asyncHandler(async (req, res) => {
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
         const dbUser = await User.findById(userId);
+
         const accessToken = dbUser.generateAccessToken();
         const refreshToken = dbUser.generateRefreshToken();
+        // console.log(accessToken, refreshToken);
 
         dbUser.refreshToken = refreshToken;
         // to avoid checking mandatory fields while saving
@@ -102,7 +104,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const { email, username, password } = req.body;
 
     // username or email
-    if (!username || !password) {
+    if (!(username || password)) {
         throw new ApiError(400, "username or email required");
     }
 
@@ -110,7 +112,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const dbUser = await User.findOne({
         $or: [
             { username },
-            { email}
+            { email }
         ]
     });
 
@@ -129,7 +131,7 @@ const loginUser = asyncHandler(async (req, res) => {
     // if valid, generate access token and refresh token
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(dbUser._id);
 
-    const loggedInUser = User.findOne(dbUser._id)
+    const loggedInUser = await User.findById(dbUser._id)
         .select("-password -refreshToken");
 
     // send the token in cookies securely
@@ -139,7 +141,7 @@ const loginUser = asyncHandler(async (req, res) => {
         secure: true,
     }
 
-    console.log("User logged in successfully ", loggedInUser.email);
+    console.log("User logged in successfully");
 
     return res
         .status(200)

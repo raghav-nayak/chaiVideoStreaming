@@ -19,14 +19,11 @@ router.route("/register").post(
     ]),
     registerUser);
 
-router.route("/login").post(
-    verifyJWT,
-    loginUser
-);
+router.route("/login").post(loginUser);
 
 // secured routes
 router.route("/logout").post(
-    verifyJWT,
+    verifyJWT, // middleware to get user details
     logoutUser
 );
 
