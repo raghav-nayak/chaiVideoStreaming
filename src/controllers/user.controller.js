@@ -1,3 +1,4 @@
+import { response } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
@@ -337,10 +338,85 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, updatedDbUser, "CoverImage is updated successfully"));
 });
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.body;
+
+    if (!username?.trim()) {
+        throw new ApiError(400, "Username is missing");
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match: {
+                username: username?.toLowerCase()
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions", // Subscription becomes subscription in mongodb
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions", // Subscription becomes subscription in mongodb
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            // adds these fields to the collection temporarily
+            $addFields: {
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                channelsSubscribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {
+                            $in: [
+                                req.user?._id,
+                                "$subscribers.subscriber"
+                            ],
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            }
+        },
+        {
+            // return only selected values from user
+            $project: {
+                fullName: 1,
+                username: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+            }
+        }
+    ]);
+
+    if (!channel?.length) {
+        throw new ApiError(404, "Channel does not exist");
+    }
+
+    return response
+        .status(200)
+    .json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
+});
+
 export {
     changeCurrentPassword,
-    getCurrentUser,
-    loginUser,
+    getCurrentUser, getUserChannelProfile, loginUser,
     logoutUser,
     refreshAccessToken,
     registerUser,
@@ -348,4 +424,3 @@ export {
     updateUserAvatar,
     updateUserCoverImage
 };
-
