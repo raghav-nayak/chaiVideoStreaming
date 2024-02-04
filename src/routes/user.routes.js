@@ -64,13 +64,13 @@ router.route("/update-account").patch(
 
 router.route("/update-avatar").patch(
     verifyJWT,
-    update.single("avatar"), // from multer, only single file update
+    upload.single("avatar"), // from multer, only single file update
     updateUserAvatar
 );
 
 router.route("/update-cover-image").patch(
     verifyJWT,
-    update.single("coverImage"), // from multer, only single file update
+    upload.single("coverImage"), // from multer, only single file update
     updateUserCoverImage
 );
 
