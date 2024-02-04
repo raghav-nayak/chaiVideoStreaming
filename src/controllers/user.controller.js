@@ -89,7 +89,6 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
         const accessToken = dbUser.generateAccessToken();
         const refreshToken = dbUser.generateRefreshToken();
-        // console.log(accessToken, refreshToken);
 
         dbUser.refreshToken = refreshToken;
         // to avoid checking mandatory fields while saving
@@ -168,8 +167,11 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id, // find clause
         {
-            $set: { // update values
-                refreshToken: undefined,
+            // $set: { // update values
+            //     refreshToken: undefined,
+            // }
+            $unset: { // unset the refreshToken
+                refreshToken: 1
             }
         },
         { // to return the new updated user object from the db
@@ -189,6 +191,7 @@ const logoutUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
+
 const refreshAccessToken = asyncHandler(async (req, res) => {
     try {
         const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
@@ -196,7 +199,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new ApiError(401, "Unauthorized request");
         }
     
-        const decodedToken = jwt.verify(incomingRefreshToken, process.env.ACCESS_TOKEN_SECRET);
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
     
         // while creating the jwt token we have given the db _id; check user.model
         const dbUser = await User.findById(decodedToken?._id);
@@ -204,7 +207,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new ApiError(401, "Invalid refresh token");
         }
     
-        if (incomingRefreshToken !== dbUser?.refreshAccessToken) {
+        if (incomingRefreshToken !== dbUser?.refreshToken) {
             throw new ApiError(401, "Refresh token is expired or used");
         }
     
@@ -219,7 +222,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         return res
             .status(200)
             .cookie("accessToken", newAccessToken, options)
-            .cookies("refreshToken", newRefreshToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
             .json(
                 new ApiResponse(
                     200,
@@ -229,10 +232,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
                     },
                     "Access token refreshed successfully"
                 )
-            )
-
+            );
     } catch (error) {
-        throw new ApiError(401, error?.message, "Invalid refresh token")
+        throw new ApiError(401, error?.message || "Invalid refresh token");
     }
 });
 
@@ -415,6 +417,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
+    console.log("I am in watch history");
     const user = await User.aggregate([
         {
             $match: {
@@ -445,16 +448,16 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                                 }
                             ]
                         }
+                    },
+                    {
+                        // to get the first value from the owner array
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
                     }
                 ]
-            }
-        },
-        {
-            // to get the first value from the owner array
-            $addFields: {
-                owner: {
-                    $first: "$owner"
-                }
             }
         }
     ]);
