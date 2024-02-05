@@ -39,16 +39,25 @@ router.route("/register").post(
 
 router.route("/login").post(loginUser);
 
-// secured routes
+
+
+// secured routes - only verified users can change
 router.route("/logout").post(
     verifyJWT, // middleware to get user details
     logoutUser
 );
 
-router.route("/refresh-token").post(refreshAccessToken);
+router.route("/refresh-token").post(
+    verifyJWT,
+    refreshAccessToken);
+
+router.route("/history").get(
+    verifyJWT,
+    getWatchHistory
+);
 
 router.route("/change-password").post(
-    verifyJWT, // only verified users can change
+    verifyJWT,
     changeCurrentPassword
 );
 
@@ -79,9 +88,5 @@ router.route("/c/:username").get( // to get username from the params
     getUserChannelProfile
 );
 
-router.route("/history").get(
-    verifyJWT,
-    getWatchHistory
-);
 
 export default router;

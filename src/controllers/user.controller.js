@@ -1,12 +1,13 @@
 import { response } from "express";
-import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import mongoose from "mongoose";
 
 const registerUser = asyncHandler(async (req, res) => {
+    console.log("registerUser() is called");
     // get user details from frontend or request
     const { fullName, email, username, password } = req.body;
     // console.log(fullName, email, username, password);
@@ -84,6 +85,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const generateAccessAndRefreshTokens = async (userId) => {
+    console.log("generateAccessAndRefreshTokens() is called");
     try {
         const dbUser = await User.findById(userId);
 
@@ -101,6 +103,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 }
 
 const loginUser = asyncHandler(async (req, res) => {
+    console.log("loginUser() is called");
     // req body -> data
     const { email, username, password } = req.body;
 
@@ -163,6 +166,7 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
+    console.log("logoutUser() is called");
     // we can access user because verifyJWT middleware function adds the user to req
     await User.findByIdAndUpdate(
         req.user._id, // find clause
@@ -191,28 +195,12 @@ const logoutUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
-
 const refreshAccessToken = asyncHandler(async (req, res) => {
+    console.log("refreshAccessToken() is called");
     try {
-        const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
-        if (!incomingRefreshToken) {
-            throw new ApiError(401, "Unauthorized request");
-        }
-    
-        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-    
-        // while creating the jwt token we have given the db _id; check user.model
-        const dbUser = await User.findById(decodedToken?._id);
-        if (!dbUser) {
-            throw new ApiError(401, "Invalid refresh token");
-        }
-    
-        if (incomingRefreshToken !== dbUser?.refreshToken) {
-            throw new ApiError(401, "Refresh token is expired or used");
-        }
-    
+        const userId = req.user._id;
         // create new tokens
-        const { newAccessToken, newRefreshToken } = await generateAccessAndRefreshTokens(dbUser._id);
+        const { newAccessToken, newRefreshToken } = await generateAccessAndRefreshTokens(userId);
 
         const options = {
             httpOnly: true,
@@ -239,6 +227,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
+    console.log("changeCurrentPassword() is called");
     const { oldPassword, newPassword } = req.body;
 
     const dbUser = await User.findById(req.user?._id);
@@ -260,12 +249,14 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
+    console.log("getCurrentUser() is called");
     return res
         .status(200)
         .json(new ApiResponse(200, req.user, "Current user fetched successfully")); 
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
+    console.log("updateAccountDetails() is called");
     const { fullName, email } = req.body;
 
     if (!(fullName || email)) {
@@ -289,6 +280,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
+    console.log("updateUserAvatar() is called");
     const avatarLocalPath = req.file?.path;
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is missing");
@@ -315,6 +307,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
+    console.log("updateUserCoverImage() is called");
     const coverImageLocalPath = req.file?.path;
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is missing");
@@ -341,6 +334,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
+    console.log("getUserChannelProfile() is called");
     const { username } = req.body;
 
     if (!username?.trim()) {
@@ -417,7 +411,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
-    console.log("I am in watch history");
+    console.log("getWatchHistory() is called");
     const user = await User.aggregate([
         {
             $match: {
